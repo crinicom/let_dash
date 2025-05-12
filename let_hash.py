@@ -4,6 +4,7 @@ from descarga_st import rescata_dataset
 from calcula_aux import aplicar_formulas_kpi, prueba
 from grafica import grafica_atributo, grafica_atributo_mes, grafica_atributo_evolutivo
 import os
+import json
 
 st.title('LET Inspecciones')
 
