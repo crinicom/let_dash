@@ -51,7 +51,7 @@ except:
     dataset_config = json.loads(config_str)
     if dataset_config != None:
         st.write(f"Cargando datos para {dataset_config["corredora"]}")
-        df = load_data(dataset_config["compania"], dataset_config["corredora"])
+        df = load_data({"compania":dataset_config["compania"], "corredora":dataset_config["corredora"]})
     else:
         st.error("Hash no válido. Por favor, ingrese un hash válido.")
         st.stop()
@@ -87,7 +87,7 @@ with tab2:
     if plot21:
         st.pyplot(plot21.get_figure())
 
-
+# pipreqs . --encoding=utf-8 --ignore .venv,__pychache__ <- para crear el requirements.txt
 # git add .
 # git commit -m "avances"
 # git push origin main
