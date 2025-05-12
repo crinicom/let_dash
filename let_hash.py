@@ -3,6 +3,7 @@ import pandas as pd
 from descarga_st import rescata_dataset
 from calcula_aux import aplicar_formulas_kpi, prueba
 from grafica import grafica_atributo, grafica_atributo_mes, grafica_atributo_evolutivo
+import os
 
 st.title('LET Inspecciones')
 
@@ -32,18 +33,31 @@ def load_data(dataset_config=None):
 hash_ingresado = st.text_input("Ingrese el hash de la región:")
 hash_ingresado = "region1"
 # Cargar la configuración de los datasets desde st.secrets
-dataset_config = st.secrets.get("dataset_config") 
+try:
+    dataset_config = st.secrets.get("dataset_config")
+    # Determinar qué dataset cargar basado en el hash ingresado
+    if hash_ingresado in dataset_config:
+        st.write(f"Cargando datos para {dataset_config[hash_ingresado]["corredora"]}")
+        df = load_data(dataset_config[hash_ingresado])
+    else:
+        st.error("Hash no válido. Por favor, ingrese un hash válido.")
+        st.stop()
 
+    if df is None:
+        st.stop()
+except:
+    dataset_config = os.environ.get("dataset_config__"+hash_ingresado)
+    if dataset_config != None:
+        st.write(f"Cargando datos para {dataset_config["corredora"]}")
+        df = load_data(dataset_config["compania"], dataset_config["corredora"])
+    else:
+        st.error("Hash no válido. Por favor, ingrese un hash válido.")
+        st.stop()
+
+    if df is None:
+        st.stop()
 # Determinar qué dataset cargar basado en el hash ingresado
-if hash_ingresado in dataset_config:
-    st.write(f"Cargando datos para {dataset_config[hash_ingresado]["corredora"]}")
-    df = load_data(dataset_config[hash_ingresado])
-else:
-    st.error("Hash no válido. Por favor, ingrese un hash válido.")
-    st.stop()
 
-if df is None:
-    st.stop()
 
 # Mostrar información sobre los datos cargados
 data_load_state = st.text("Datos desde: " + str(df["fecha_emision"].min()) + " hasta: " + str(df["fecha_emision"].max()))
@@ -70,3 +84,8 @@ with tab2:
                                          "Evolución del % de respuestas ≤ 30 min")
     if plot21:
         st.pyplot(plot21.get_figure())
+
+
+# git add .
+# git commit -m "avances"
+# git push origin main
