@@ -1,10 +1,20 @@
 ---
-title: Deploy Streamlit to Digitalocean
-date: 2023/1/13
-description: How to deploy streamlit to digitalocean
-tag: web development
-author: Severin
+title: LET DASHBOARD
+date: 2025/03/14
+description: Dashboard para clientes LET
+tag: Data rep
+author: Cristian
 ---
+
+# Pendientes
+-x pasar a secreto la autorización
+-x tablero de pruebas
+-x simular query de feriados
+- usar IA para recalcular KPIs
+
+
+
+
 
 # How to Deploy Streamlit to Digitalocean App
 
