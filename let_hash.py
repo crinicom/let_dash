@@ -46,7 +46,8 @@ try:
     if df is None:
         st.stop()
 except:
-    dataset_config = os.environ.get("dataset_config__"+hash_ingresado)
+    config_str= os.environ.get("dataset_config__"+hash_ingresado)
+    dataset_config = json.loads(config_str)
     if dataset_config != None:
         st.write(f"Cargando datos para {dataset_config["corredora"]}")
         df = load_data(dataset_config["compania"], dataset_config["corredora"])
