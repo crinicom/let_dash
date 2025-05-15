@@ -56,7 +56,12 @@ except Exception as e:
     st.error(f"Ocurrió un error al cargar los datos: {e}")
     config_str= os.environ.get("dataset_config__"+hash_ingresado)
     st.write(f"{config_str=}")
-    dataset_config = json.loads(config_str)
+    if config_str != None:
+        dataset_config = json.loads(config_str)    
+    else:
+        st.error("No se encontró la configuración del dataset.")
+        st.stop()
+    
 
     if dataset_config != None:
         st.write(f"Cargando datos para {dataset_config["corredora"]}")
