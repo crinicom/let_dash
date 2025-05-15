@@ -84,11 +84,13 @@ def aplicar_formulas_kpi(df_calc):
     df["KPI DÍAS EN INSPECCIONAR DH"] = df.apply(calcular_kpi_dias_inspeccion_dh, axis=1)
 
     df["KPI DÍAS EN INSPECCIONAR DH OK"] = df.apply(calcular_kpi_dias_inspeccion_dh_ok, axis=1)
-
-    df["cálculo resp BO DOM"] = df.apply(calcular_resp_bo_dom, axis=1)
-
+    try:
+        df["cálculo resp BO DOM"] = df.apply(calcular_resp_bo_dom, axis=1)
+    except Exception as e:
+        print("Error en calcular_resp_bo_dom:", e)
+    #print(df["cálculo resp BO DOM"].describe())
     # Apply the conversion function to the column
-    df_calc['cálculo resp BO DOM HMS'] = df_calc['cálculo resp BO DOM'].apply(
+    df['cálculo resp BO DOM HMS'] = df['cálculo resp BO DOM'].apply(
         lambda x: decimal_days_to_hms(float(x)) if isinstance(x, (int, float, str)) and str(x).replace('.', '', 1).isdigit() else "n/a"
     )
 
@@ -130,6 +132,9 @@ def aplicar_formulas_kpi(df_calc):
     # Add the new column to the dataframe
     df["resp BO GRAL CEILING OK"] = df.apply(calcular_resp_bo_gral_ceiling_ok, axis=1)
 
+    df["resp BO GRAL CEILING OK HMS"] = df["resp BO GRAL CEILING OK"].apply(
+        lambda x: f"{int(x * 24):02d}:{int((x * 24 * 60) % 60):02d}" if isinstance(x, (int, float)) else "n/a"
+    )
 
     # Add the new column to the dataframe
     df["fecha/hora ASIS"] = df.apply(calcular_fecha_hora_asis, axis=1)
@@ -151,6 +156,39 @@ def aplicar_formulas_kpi(df_calc):
 
 
     return df
+
+def medidas_centrales(col_interes):
+    for col in col_interes:
+        valid_values = df_calc[col][~df_calc[col].isin(["error", "n/a"])]
+    # Convertir los valores de tiempo en formato hh:mm a minutos
+    def convertir_a_minutos(valor):
+        if isinstance(valor, str) and ":" in valor:
+            horas, minutos = map(int, valor.split(":"))
+            return horas * 60 + minutos
+        elif valor == "9+":
+            return 540
+        return None
+
+    # Filtrar valores válidos y convertir a minutos
+    valid_values_minutos = valid_values.apply(convertir_a_minutos).dropna()
+
+    # Calcular el promedio y la mediana en minutos
+    promedio_minutos = valid_values_minutos.mean()
+    mediana_minutos = valid_values_minutos.median()
+
+    # Convertir el promedio y la mediana de minutos a formato hh:mm
+    def minutos_a_hhmm(minutos):
+        horas = int(minutos // 60)
+        minutos_restantes = int(minutos % 60)
+        return f"{horas:02d}:{minutos_restantes:02d}"
+
+    promedio_hhmm = minutos_a_hhmm(promedio_minutos)
+    mediana_hhmm = minutos_a_hhmm(mediana_minutos)
+
+    # Guardar los resultados en una variable
+    resultados_tiempo = {"promedio": promedio_hhmm, "mediana": mediana_hhmm}
+    return resultados_tiempo
+
 
 def calcular_ai_con_error(row):
     # USO DE LA FUNCIÓN
@@ -386,7 +424,7 @@ from math import floor
 def combinar_fecha_hora(fecha, hora):
     if pd.isnull(fecha) or pd.isnull(hora):
         return None
-    return pd.to_datetime(f"{fecha} {hora}", errors='coerce')
+    return pd.to_datetime(f"{fecha} {hora}")#, errors='coerce')
 
 def decimal_days_to_hms(days):
     """Converts a decimal representation of days to hh:mm:ss format."""
@@ -410,19 +448,28 @@ lower = 9 / 24
 
 # Apply the logic to each row in the dataset
 def calcular_resp_bo_dom(row):
+    #print(f"Entré a calcular_resp_bo_dom {row}")
     fecha_termino_insp = row["fecha_termino_inspeccion"]
     hora_termino_insp = row["hora_termino_inspeccion"]
     fecha_transmision = row["fecha_transmision_inspeccion"]
     hora_transmision = row["hora_transmision_inspeccion"]
     calculo_resp_bo_dom = ""
 
-    fecha_hora_termino_dom = combinar_fecha_hora(fecha_termino_insp, hora_termino_insp)
-    fecha_hora_entrega_dom = combinar_fecha_hora(fecha_transmision, hora_transmision)
+    try:
+        fecha_hora_termino_dom = combinar_fecha_hora(fecha_termino_insp, hora_termino_insp)
+        fecha_hora_entrega_dom = combinar_fecha_hora(fecha_transmision, hora_transmision)
+    except Exception as e:
+        print("Error en combinar_fecha_hora:", e)
+        
 
     if pd.isnull(fecha_hora_termino_dom) or pd.isnull(fecha_hora_entrega_dom) or fecha_hora_entrega_dom < fecha_hora_termino_dom:
         calculo_resp_bo_dom = "n/a"
     else:
-        dias_laborables = calcular_dias_laborables(fecha_hora_termino_dom, fecha_hora_entrega_dom, feriados) - 1
+        try:
+            dias_laborables = calcular_dias_laborables(fecha_hora_termino_dom, fecha_hora_entrega_dom, feriados) - 1
+        except Exception as e:
+            print("Error en calcular_dias_laborables:", e)
+            
         residuo_termino = (fecha_hora_termino_dom - pd.Timestamp(fecha_hora_termino_dom.date())).total_seconds() / (24 * 3600)
         residuo_entrega = (fecha_hora_entrega_dom - pd.Timestamp(fecha_hora_entrega_dom.date())).total_seconds() / (24 * 3600)
 
@@ -643,7 +690,7 @@ def calcular_resp_bo_gral(row):
         if diferencia is None:
             resp_bo_gral = "error"
         else:
-            print(row["fecha_termino_inspeccion"], fecha_termino, row["fecha_entrega_informe"],fecha_entrega, diferencia)
+            #print(row["fecha_termino_inspeccion"], fecha_termino, row["fecha_entrega_informe"],fecha_entrega, diferencia)
             resp_bo_gral = diferencia
 
     return resp_bo_gral

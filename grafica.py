@@ -89,6 +89,7 @@ def grafica_atributo_mes(df_calc, atributo, title):
         return None
 
     col_interes = [atributo]
+    print(col_interes)
 
     for col in col_interes:
         valid_values = df_mes[col][~df_mes[col].isin(["error", "n/a"])]
